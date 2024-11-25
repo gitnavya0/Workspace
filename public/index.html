@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.157.0/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+
+    <title>Workspace Visualizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --background-color: #f9fafb;
+            --card-background: #ffffff;
+            --border-color: #e5e7eb;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --gradient-start: #6366f1;
+            --gradient-end: #8b5cf6;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.04em;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-weight: 500;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .upload-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .upload-section {
+            background: var(--card-background);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            letter-spacing: -0.025em;
+        }
+
+        .section-description {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .dropZone {
+            border: 2px dashed var(--border-color);
+            padding: 2rem 1.5rem;
+            text-align: center;
+            margin: 1rem 0;
+            cursor: pointer;
+            border-radius: 1rem;
+            background: var(--background-color);
+            transition: all 0.3s ease-in-out;
+            position: relative;
+        }
+
+        .dropZone .primary-text {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .dropZone .secondary-text {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .dropZone:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .dropZone.dragover {
+            border-color: var(--primary-color);
+            background: #f5f3ff;
+            transform: scale(1.01);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .preview-image {
+            max-width: 100%;
+            height: auto;
+            margin-top: 1rem;
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow);
+            display: none;
+        }
+
+        .upload-icon {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: var(--primary-color);
+        }
+
+        .upload-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .upload-button:hover {
+            background: var(--primary-hover);
+        }
+
+        .upload-button:disabled {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        #loading {
+            display: none;
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .upload-container {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .upload-section {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Workspace Visualizer</h1>
+        <p class="subtitle">Create your perfect ergonomic sanctuary</p>
+
+        <div class="upload-container">
+            <div class="upload-section">
+                <h2>Sitting Image</h2>
+                <p class="section-description">Upload your image in a standing posture</p>
+                <div class="dropZone" id="dropZone1">
+                    <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <div class="primary-text">Drag and drop your image here</div>
+                    <div class="secondary-text">or click to select a file</div>
+                    <input type="file" id="imageUpload1" accept="image/*" style="display: none">
+                </div>
+                <img id="imagePreview1" class="preview-image">
+            </div>
+
+            <div class="upload-section">
+                <h2>Standing Image</h2>
+                <p class="section-description">Upload your image in a standing posture</p>
+                <div class="dropZone" id="dropZone2">
+                    <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <div class="primary-text">Drag and drop your image here</div>
+                    <div class="secondary-text">or click to select a file</div>
+                    <input type="file" id="imageUpload2" accept="image/*" style="display: none">
+                </div>
+                <img id="imagePreview2" class="preview-image">
+            </div>
+        </div>
+
+        <button id="uploadButton" class="upload-button" disabled>Upload Images</button>
+        <div id="loading">Processing...</div>
+    </div>
+
+    <div class="model-container" style="width: 100%; height: 500px; margin-top: 2rem;">
+        <h2>3D Model of Your Workspace</h2>
+        <div id="modelView" style="width: 100%; height: 100%; position: relative;"></div>
+    </div>
+
+    <script>
+        const dropZone1 = document.getElementById('dropZone1');
+        const dropZone2 = document.getElementById('dropZone2');
+        const imageUpload1 = document.getElementById('imageUpload1');
+        const imageUpload2 = document.getElementById('imageUpload2');
+        const imagePreview1 = document.getElementById('imagePreview1');
+        const imagePreview2 = document.getElementById('imagePreview2');
+        const uploadButton = document.getElementById('uploadButton');
+        const loadingIndicator = document.getElementById('loading');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            load3DModel('3dmodel.glb'); // Load the default model
+        });
+
+        let selectedFiles = {
+            before: null,
+            after: null
+        };
+
+        function updateUploadButtonState() {
+            uploadButton.disabled = !(selectedFiles.before && selectedFiles.after);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(e, type) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageSelection(file, type);
+            }
+        }
+
+        function handleImageSelection(file, type) {
+            const preview = type === 'before' ? imagePreview1 : imagePreview2;
+            selectedFiles[type] = file;
+            updateUploadButtonState();
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Event listeners for the first drop zone
+        dropZone1.addEventListener('dragover', handleDragOver);
+        dropZone1.addEventListener('dragleave', handleDragLeave);
+        dropZone1.addEventListener('drop', (e) => handleDrop(e, 'before'));
+        dropZone1.addEventListener('click', () => imageUpload1.click());
+        imageUpload1.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleImageSelection(e.target.files[0], 'before');
+            }
+        });
+
+        // Event listeners for the second drop zone
+        dropZone2.addEventListener('dragover', handleDragOver);
+        dropZone2.addEventListener('dragleave', handleDragLeave);
+        dropZone2.addEventListener('drop', (e) => handleDrop(e, 'after'));
+        dropZone2.addEventListener('click', () => imageUpload2.click());
+        imageUpload2.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleImageSelection(e.target.files[0], 'after');
+            }
+        });
+
+        async function load3DModel(modelUrl) {
+
+            // Clear previous renderer if it exists
+            const existingCanvas = document.querySelector('#modelView canvas');
+            if (existingCanvas) {
+                existingCanvas.remove();
+            }
+
+            const modelView = document.getElementById('modelView');
+            const width = modelView.clientWidth;
+            const height = modelView.clientHeight;
+
+            // Initialize scene
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+
+            renderer.setSize(width, height);
+            renderer.setClearColor(0xf0f0f0);
+            renderer.shadowMap.enabled = true;
+            modelView.appendChild(renderer.domElement);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = true;
+
+            // Set up lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 5, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+
+            // Load the model
+            const loader = new THREE.GLTFLoader();
+            try {
+                const gltf = await new Promise((resolve, reject) => {
+                    loader.load(
+                        modelUrl,
+                        resolve,
+                        (xhr) => {
+                            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                        },
+                        reject
+                    );
+                });
+
+                const model = gltf.scene;
+                scene.add(model);
+
+                // Center the model
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+
+                // Reset model position to center
+                model.position.sub(center);
+
+                // Position camera to frame the model
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const fov = camera.fov * (Math.PI / 180);
+                const cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.5;
+
+                camera.position.set(cameraDistance, cameraDistance / 2, cameraDistance);
+                camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+
+                // Animation loop
+                function animate() {
+                    requestAnimationFrame(animate);
+                    controls.update();
+                    renderer.render(scene, camera);
+                }
+                animate();
+
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    const newWidth = modelView.clientWidth;
+                    const newHeight = modelView.clientHeight;
+
+                    camera.aspect = newWidth / newHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(newWidth, newHeight);
+                });
+
+            } catch (error) {
+                console.error('Error loading model:', error);
+                alert('Error loading 3D model. Please try again.');
+            }
+        }
+
+        // Modified upload button event listener
+        uploadButton.addEventListener('click', async () => {
+            if (!selectedFiles.before || !selectedFiles.after) {
+                alert('Please select both images before uploading');
+                return;
+            }
+
+            loadingIndicator.style.display = 'block';
+            uploadButton.disabled = true;
+
+            const formData = new FormData();
+            formData.append('beforeImage', selectedFiles.before);
+            formData.append('afterImage', selectedFiles.after);
+
+            try {
+                const response = await fetch('http://localhost:3000/upload-images', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Images processed successfully! Loading 3D model...');
+                    await load3DModel(data.modelUrl);
+                } else {
+                    throw new Error(data.error || 'Error processing images');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert(error.message || 'Error processing images');
+            } finally {
+                loadingIndicator.style.display = 'none';
+                uploadButton.disabled = false;
+            }
+        });
+
+    </script>
+</body>
+
+</html>
